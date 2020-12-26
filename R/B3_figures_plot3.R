@@ -8,7 +8,8 @@ source("setup.R")
 source("colours.R")
 
 ### Recover dataset ###
-
+### 
+pof_svy <- readr::read_rds(here::here('data','pof_svy.rds'))
 pof <- readr::read_rds(here::here('data','pof_total.rds')) %>% data.table::setDT()
 pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT()
 
@@ -17,28 +18,38 @@ pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT
 
 ## Left panel: usership rate
 
-plot3a <- pof[,.(RH = mean(RH,na.rm = TRUE)),
-              by = .(RM,ESTRATO)] %>% 
-  na.omit() %>%  
-  tidyr::pivot_longer(names_to = 'MODO',
-                      values_to = 'TAXA',
-                      cols = 'RH') %>% 
-  dplyr::filter(ESTRATO %in% c('Capital', 'RM da Capital')) %>% 
-  dplyr::filter(RM != 'Brasil Urbano')
+se_rm <- function(x){
+  
+  df <- 
+    survey::svymean(~RH,subset(pof_svy,RM==x & ESTRATO == 'Capital'),na.rm=T) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(RM = as.character(x), ESTRATO = 'Capital') %>% 
+    dplyr::bind_rows(survey::svymean(~RH,subset(pof_svy,RM==x & ESTRATO == 'RM da Capital'),na.rm=T) %>% 
+                       dplyr::as_tibble() %>% 
+                       dplyr::mutate(RM = as.character(x), ESTRATO = 'RM da Capital'))
+  return(df)
+}
+cities<-unique(pof$RM)[-1][-1]
 
-p3a<- 
-  plot3a %>% 
-  ggplot(aes(TAXA,reorder(RM,TAXA),group = RM)) +
-  geom_path(linetype = 'dotted') +
-  geom_point(aes(fill=ESTRATO), shape=21,size=3.5) +
-  scale_fill_aop() +
+plot3a <- purrr::map(.x=cities,.f = se_rm) %>% data.table::rbindlist()
+
+plot3a$RM <- factor(plot3a$RM ,
+                    levels= c("Belém","Curitiba","Maceió","São Luís","Manaus",'Fortaleza',"Brasília",
+                              'Florianópolis',"Rio de Janeiro","São Paulo","Vitória","Campo Grande",
+                              "Salvador","Recife","Belo Horizonte","Goiânia",   "Cuiabá","Porto Alegre"))
+
+p3<-
+ggplot(plot3a) +
+  geom_linerange(aes(mean,RM,xmin = mean - RH,xmax = mean + RH, 
+                     color = ESTRATO), position = position_dodge(width = 0.5)) +
+  geom_point(aes(mean,RM, fill = ESTRATO),shape=21,size=3, position = position_dodge(width = 0.5)) +
   theme_minimal() +
-  scale_x_continuous(limits = c(0,.175),labels = scales::percent) +
-  labs(y = '',x='Taxa de Utilização', fill='') +
+  scale_fill_aop() +
+  scale_colour_aop() +
+  scale_x_continuous(limits = c(-0.01,0.2),labels = scales::percent) +
+  labs(x = 'Taxa de Utilização',y='',fill = '',color = '') +
   theme(legend.position = 'top',
-        panel.grid.minor = element_blank(),
-        axis.title = element_text(size = 10),
-        axis.text = element_text(size = 10))
+        panel.grid.minor = element_blank())
 
 ## Right Panel: users by city
 
@@ -64,7 +75,7 @@ p3b<-
 
 library(patchwork)
 
-p<-p3a|p3b
+p<-p3|p3b
 p + plot_annotation(tag_levels = 'A')
 
 

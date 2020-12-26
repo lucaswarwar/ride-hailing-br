@@ -11,8 +11,9 @@ source("colours.R")
 
 pof <- readr::read_rds(here::here('data','pof_total.rds')) %>% data.table::setDT()
 pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT()
-pof_svy <- readr::read_rds(here::here('data','pof_rh_svy.rds'))
+pof_svy <- readr::read_rds(here::here('data','pof_svy.rds'))
 
+survey::svymean(~FREQ_RH,pof_svy,na.rm=T)
 # Gráfico 6: Frequência de uso de serviços de ride-hailing por faixa de renda e idade (A), sexo (B) e cor (C) 
 # e distribuição do custo da viagem por faixa de renda (D), sexo (E) e cor (F).
 
@@ -135,7 +136,7 @@ p6e<-
                  color = '#00324a',) +
   geom_point(aes(mean,QUINTIL),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,35)) +
+  scale_x_continuous(limits = c(15,30)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
@@ -161,7 +162,7 @@ p6f<-
                  color = '#00324a',) +
   geom_point(aes(mean,SEXO),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,35)) +
+  scale_x_continuous(limits = c(15,30)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
@@ -186,7 +187,7 @@ p6g<-
                  color = '#00324a',) +
   geom_point(aes(mean,FAIXA_ETARIA),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,35)) +
+  scale_x_continuous(limits = c(15,30)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
@@ -211,7 +212,7 @@ p6h<-
                  color = '#00324a',) +
   geom_point(aes(mean,COR),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,35)) +
+  scale_x_continuous(limits = c(15,30)) +
   labs(x = 'Custo médio da viagem (R$)',y='') +
   theme(legend.position = 'top',
         panel.grid.minor = element_blank())
@@ -223,7 +224,7 @@ p <- (p6a/p6b/p6c/p6d)|(p6e/p6f/p6g/p6h)
 p+plot_annotation(tag_levels = 'A')
 
 
-ggsave(here::here('figures','plot6.png'), dpi = 300, height = 6,width = 7.5,units = 'in')
-ggsave(here::here('figures','plot6.pdf'), dpi = 300, height = 6,width = 7.5,units = 'in')
-ggsave(here::here('figures','plot6.svg'), dpi = 300, height = 6,width = 7.5,units = 'in')
+ggsave(here::here('figures','plot6.png'), dpi = 300, height = 16,width = 16,units = 'cm')
+ggsave(here::here('figures','plot6.pdf'), dpi = 300, height = 16,width = 16,units = 'cm')
+ggsave(here::here('figures','plot6.svg'), dpi = 300, height = 16,width = 16,units = 'cm')
 rm(list = ls())

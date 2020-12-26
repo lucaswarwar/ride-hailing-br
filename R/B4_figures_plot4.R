@@ -9,6 +9,7 @@ source("colours.R")
 
 ### Recover dataset ###
 
+pof_svy <- readr::read_rds(here::here('data','pof_svy.rds'))
 pof <- readr::read_rds(here::here('data','pof_total.rds')) %>% data.table::setDT()
 pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT()
 
@@ -18,23 +19,29 @@ pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT
 ## Top panel: usership rate
 
 # Top (A) - Estrato e tipo de casa
-plot4a <- pof[,.(RH = mean(RH,na.rm = TRUE)),
-              by = .(TIPO_DOM, ESTRATO)] %>% 
-  na.omit() %>%  
-  tidyr::pivot_longer(names_to = 'MODO',
-                      values_to = 'TAXA',
-                      cols = 'RH') %>% 
-  dplyr::filter(TIPO_DOM != 'Habitação Irregular') %>% 
-  dplyr::filter(ESTRATO != 'Interior Rural')
+se_tipodom <- function(x){
+  
+  df <- 
+    survey::svymean(~RH,subset(pof_svy,ESTRATO==x & TIPO_DOM == 'Apartamento'),na.rm=T) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(ESTRATO = as.character(x), TIPO_DOM = 'Apartamento') %>% 
+    dplyr::bind_rows(survey::svymean(~RH,subset(pof_svy,ESTRATO==x & TIPO_DOM == 'Casa'),na.rm=T) %>% 
+                       dplyr::as_tibble() %>% 
+                       dplyr::mutate(ESTRATO = as.character(x), TIPO_DOM = 'Casa'))
+  return(df)
+}
+
+plot4a <- purrr::map(.x=c('Capital','RM da Capital','Interior Urbano'),.f = se_tipodom) %>% data.table::rbindlist()
 
 p4a <-
   ggplot(plot4a) +
-  geom_path(aes(TAXA,reorder(ESTRATO,TAXA),group=ESTRATO),linetype='dotted') +
-  geom_point(aes(TAXA,reorder(ESTRATO,TAXA),fill=TIPO_DOM), shape=21,size=3.5) +
+  geom_linerange(aes(mean,reorder(ESTRATO,mean),xmin = mean - RH,xmax = mean + RH, 
+                     color = TIPO_DOM), position = position_dodge(width = 0.5)) +
+  geom_point(aes(mean,ESTRATO, fill = TIPO_DOM),shape=21,size=3, position = position_dodge(width = 0.5)) +
   scale_fill_aop() +
   theme_minimal() +
   scale_x_continuous(limits = c(0,.125),labels=scales::percent) +
-  labs(x = 'Taxa de Utilização',y='', fill='') +
+  labs(x = 'Taxa de Utilização',y='', fill='',color="") +
   theme(legend.position = 'top',
         panel.grid.minor = element_blank(),
         axis.title = element_text(size=8),

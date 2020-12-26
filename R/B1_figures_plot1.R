@@ -15,10 +15,10 @@ pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT
 # Gráfico 1. Taxa de utilização por quintil de renda (A) e proporção dos usuários de por decil de renda (B) por modo de transporte.
 
 # Top (A)
-plot1a <- pof[,.(RH = sum(RH,na.rm = TRUE)/.N,
-                 TP = sum(TP,na.rm = TRUE)/.N,
-                 TX = sum(TX,na.rm = TRUE)/.N,
-                 PR = sum(PR,na.rm = TRUE)/.N),
+plot1a <- pof[,.(RH = weighted.mean(RH,PESO_FINAL,na.rm = TRUE),
+                 TP = weighted.mean(TP,PESO_FINAL,na.rm = TRUE),
+                 TX = weighted.mean(TX,PESO_FINAL,na.rm = TRUE),
+                 PR = weighted.mean(PR,PESO_FINAL,na.rm = TRUE)),
               by = .(QUINTIL)] %>% 
   na.omit() %>%  
   tidyr::pivot_longer(names_to = 'MODO',
@@ -47,12 +47,12 @@ ggplot(plot1a) +
 # Bottom (B)
 
 df <- pof %>% 
-  dplyr::filter(RH == 1) %>% 
-  dplyr::mutate(total = n_distinct(ID_MORADOR)) %>% 
-  dplyr::group_by(DECIL) %>% 
-  dplyr::summarise(SHARE = mean(n()/total)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(MODO = 'Ride-hailing')
+    dplyr::filter(RH == 1) %>% 
+    dplyr::mutate(total = n_distinct(ID_MORADOR)) %>% 
+    dplyr::group_by(DECIL) %>% 
+    dplyr::summarise(SHARE = mean(n()/total)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(MODO = 'Ride-hailing')
 
 df2 <- pof %>% 
   dplyr::filter(TP == 1) %>% 

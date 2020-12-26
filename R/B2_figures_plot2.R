@@ -9,6 +9,7 @@ source("colours.R")
 
 ### Recover dataset ###
 
+pof_svy <- readr::read_rds(here::here('data','pof_svy.rds'))
 pof <- readr::read_rds(here::here('data','pof_total.rds')) %>% data.table::setDT()
 pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT()
 
@@ -18,56 +19,72 @@ pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT
 ## Left panel: usership rate
 
 # Left (A) - Idade
-plot2a <- pof[,.(RH = mean(RH,na.rm = TRUE)),
-              by = .(FAIXA_ETARIA)] %>% 
-  na.omit() %>%  
-  tidyr::pivot_longer(names_to = 'MODO',
-                      values_to = 'TAXA',
-                      cols = 'RH') %>% 
-  dplyr::filter(FAIXA_ETARIA != '0-14')
+se_idade <- function(x){
+  
+  df <- 
+    survey::svymean(~RH,subset(pof_svy,FAIXA_ETARIA==x),na.rm=T) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(FAIXA_ETARIA = as.character(x))
+  return(df)
+}
+
+plot2a <- purrr::map(.x=c("35-44","45-54","25-34","15-24","55-64","65+"),.f = se_idade) %>% data.table::rbindlist()
 
 p2a<-
   ggplot(plot2a) +
-  geom_point(aes(TAXA,FAIXA_ETARIA), shape=21,size=3.5, fill = '#00324a') +
+  geom_linerange(aes(mean,FAIXA_ETARIA,xmin = mean - RH,xmax = mean + RH),
+                 color = '#00324a',) +
+  geom_point(aes(mean,FAIXA_ETARIA),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(0,.045)) +
+  scale_x_continuous(limits = c(0.01,0.041)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
         panel.grid.minor = element_blank())
 
 # Left (B) - Sexo
-plot2b <- pof[,.(RH = mean(RH,na.rm = TRUE)),
-              by = .(SEXO)] %>% 
-  na.omit() %>%  
-  tidyr::pivot_longer(names_to = 'MODO',
-                      values_to = 'TAXA',
-                      cols = 'RH')
+se_sexo <- function(x){
+  
+  df <- 
+    survey::svymean(~RH,subset(pof_svy,SEXO==x),na.rm=T) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(SEXO = as.character(x))
+  return(df)
+}
 
-p2b <-
+plot2b <- purrr::map(.x=c('Homem','Mulher'),.f = se_sexo) %>% data.table::rbindlist()
+
+p2b<-
   ggplot(plot2b) +
-  geom_point(aes(TAXA,reorder(SEXO,TAXA)), shape=21,size=3.5, fill = '#00324a') +
+  geom_linerange(aes(mean,SEXO,xmin = mean - RH,xmax = mean + RH),
+                 color = '#00324a',) +
+  geom_point(aes(mean,SEXO),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(0,.045)) +
+  scale_x_continuous(limits = c(0.01,0.041)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
         panel.grid.minor = element_blank())
 
 # Left (C) - Cor
-plot2c <- pof[,.(RH = mean(RH,na.rm = TRUE)),
-              by = .(COR)] %>% 
-  na.omit() %>%  
-  tidyr::pivot_longer(names_to = 'MODO',
-                      values_to = 'TAXA',
-                      cols = 'RH') %>% 
-  dplyr::filter(COR != 'Outra')
+se_cor <- function(x){
+  
+  df <- 
+    survey::svymean(~RH,subset(pof_svy,COR==x),na.rm=T) %>% 
+    dplyr::as_tibble() %>% 
+    dplyr::mutate(COR = as.character(x))
+  return(df)
+}
 
-p2c <-
+plot2c <- purrr::map(.x=c("Branca","Preta","Parda"),.f = se_cor) %>% data.table::rbindlist()
+
+p2c<-
   ggplot(plot2c) +
-  geom_point(aes(TAXA,reorder(COR,TAXA)), shape=21,size=3.5, fill = '#00324a') +
+  geom_linerange(aes(mean,COR,xmin = mean - RH,xmax = mean + RH),
+                 color = '#00324a',) +
+  geom_point(aes(mean,COR),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(0,.045),labels=scales::percent) +
+  scale_x_continuous(limits = c(0.01,0.041), labels = scales::percent) +
   labs(x = 'Taxa de Utilização',y='') +
   theme(legend.position = 'top',
         panel.grid.minor = element_blank())
@@ -149,7 +166,7 @@ p2f <-
 
 library(patchwork)
 
-p<-(p2a/p2b/p2c)|(p2d/p2e/p2f)
+p <- (p2a/p2b/p2c)|(p2d/p2e/p2f)
 p + plot_annotation(tag_levels = 'A')
 
 
