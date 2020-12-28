@@ -13,7 +13,7 @@ pof <- readr::read_rds(here::here('data','pof_total.rds')) %>% data.table::setDT
 pof_rh <- readr::read_rds(here::here('data','pof_rh.rds')) %>% data.table::setDT()
 pof_svy <- readr::read_rds(here::here('data','pof_svy.rds'))
 
-survey::svymean(~FREQ_RH,pof_svy,na.rm=T)
+survey::svymean(~IDADE,pof_svy,na.rm=T)
 # Gráfico 6: Frequência de uso de serviços de ride-hailing por faixa de renda e idade (A), sexo (B) e cor (C) 
 # e distribuição do custo da viagem por faixa de renda (D), sexo (E) e cor (F).
 
@@ -136,7 +136,7 @@ p6e<-
                  color = '#00324a',) +
   geom_point(aes(mean,QUINTIL),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,30)) +
+  scale_x_continuous(limits = c(15,47.5)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
@@ -162,7 +162,7 @@ p6f<-
                  color = '#00324a',) +
   geom_point(aes(mean,SEXO),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,30)) +
+  scale_x_continuous(limits = c(15,47.5)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
@@ -187,7 +187,7 @@ p6g<-
                  color = '#00324a',) +
   geom_point(aes(mean,FAIXA_ETARIA),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,30)) +
+  scale_x_continuous(limits = c(15,47.5)) +
   labs(x = '',y='') +
   theme(legend.position = 'top',
         axis.text.x = element_blank(),
@@ -212,7 +212,7 @@ p6h<-
                  color = '#00324a',) +
   geom_point(aes(mean,COR),shape=21,size=3,fill = '#00324a') +
   theme_minimal() +
-  scale_x_continuous(limits = c(15,30)) +
+  scale_x_continuous(limits = c(15,47.5)) +
   labs(x = 'Custo médio da viagem (R$)',y='') +
   theme(legend.position = 'top',
         panel.grid.minor = element_blank())
